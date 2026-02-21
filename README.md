@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/rules-16-blue?style=flat-square" alt="16 rules">
+  <img src="https://img.shields.io/badge/rules-19-blue?style=flat-square" alt="19 rules">
   <img src="https://img.shields.io/badge/severity-ERROR-red?style=flat-square" alt="Error severity">
   <img src="https://img.shields.io/badge/dart-%3E%3D3.0-0175C2?style=flat-square&logo=dart" alt="Dart 3+">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
@@ -27,7 +27,7 @@ catch at compile time. AI agents make this worse — they generate code that
 
 ## The Solution
 
-Rigid Dart is a `custom_lint` plugin that enforces **16 rules** as hard
+Rigid Dart is a `custom_lint` plugin that enforces **19 rules** as hard
 analyzer errors. Every rule uses **TypeChecker-based type resolution** —
 it catches aliases, subclasses, and reexports, not just string names.
 It also ships **3 quick fixes**, a **strict `analysis_options.yaml`** base,

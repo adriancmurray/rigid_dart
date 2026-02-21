@@ -21,10 +21,14 @@ import 'package:rigid_dart/rules/state/no_build_context_across_async.dart';
 import 'package:rigid_dart/rules/state/no_change_notifier.dart';
 import 'package:rigid_dart/rules/state/no_set_state.dart';
 // ── Architecture ──────────────────────────────────────────────────────
+import 'package:rigid_dart/rules/architecture/layer_boundaries.dart';
 import 'package:rigid_dart/rules/architecture/no_hardcoded_colors.dart';
 import 'package:rigid_dart/rules/architecture/no_hardcoded_text_style.dart';
 import 'package:rigid_dart/rules/architecture/no_magic_numbers.dart';
 import 'package:rigid_dart/rules/architecture/require_tests.dart';
+// ── Quality ───────────────────────────────────────────────────────────
+import 'package:rigid_dart/rules/quality/max_widget_lines.dart';
+import 'package:rigid_dart/rules/quality/no_raw_async.dart';
 // ── Freshness ─────────────────────────────────────────────────────────
 import 'package:rigid_dart/rules/freshness/no_dynamic.dart';
 import 'package:rigid_dart/rules/freshness/no_print.dart';
@@ -46,15 +50,19 @@ class _RigidDartPlugin extends PluginBase {
     ExhaustiveAsync(),
     NoBuildContextAcrossAsync(),
     DisposeRequired(),
-    // Phase 3: Architecture (3 rules)
+    // Phase 3: Architecture (4 rules)
     NoHardcodedColors(),
     NoHardcodedTextStyle(),
     NoMagicNumbers(),
     RequireTests(),
+    LayerBoundaries(),
     // Phase 4: Freshness (4 rules)
     NoWillPopScope(),
     NoWithOpacity(),
     NoDynamic(),
     NoPrint(),
+    // Phase 5: Quality (2 rules)
+    MaxWidgetLines(),
+    NoRawAsync(),
   ];
 }

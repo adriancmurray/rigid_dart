@@ -28,11 +28,14 @@ const _ruleCategories = <String, RuleCategory>{
   'rigid_no_print': RuleCategory.opinionated,
   'rigid_no_dynamic': RuleCategory.opinionated,
   'rigid_require_tests': RuleCategory.opinionated,
+  'rigid_max_widget_lines': RuleCategory.opinionated,
+  'rigid_no_raw_async': RuleCategory.opinionated,
+  'rigid_layer_boundaries': RuleCategory.opinionated,
 };
 
 /// Preset definitions. Each maps rule names to enabled/disabled.
 enum Preset {
-  /// All 16 rules enabled as errors.
+  /// All 19 rules enabled as errors.
   strict,
 
   /// Universal rules as errors. Opinionated rules enabled based on
@@ -119,6 +122,33 @@ class RigidConfig {
     return false;
   }
 
+  /// Max widget lines threshold from preferences. Null if not configured.
+  int? get maxWidgetLines {
+    final v = preferences['max_widget_lines'];
+    if (v is int) return v;
+    return null;
+  }
+
+  /// Layer boundary map from preferences. Empty if not configured.
+  Map<String, List<String>> get layers {
+    final v = preferences['layers'];
+    if (v is! YamlMap && v is! Map) return const {};
+    final result = <String, List<String>>{};
+    final map = v as Map;
+    for (final entry in map.entries) {
+      final key = entry.key as String;
+      final value = entry.value;
+      if (value is YamlList) {
+        result[key] = value.cast<String>().toList();
+      } else if (value is List) {
+        result[key] = value.cast<String>().toList();
+      } else {
+        result[key] = const [];
+      }
+    }
+    return result;
+  }
+
   // ── Preference-based enablement ────────────────────────────────────────
 
   bool _isEnabledByPreferences(String ruleName) {
@@ -142,6 +172,17 @@ class RigidConfig {
         // These are style preferences — enabled in balanced if preferences
         // don't explicitly disable them.
         return preferences[ruleName] != false;
+
+      case 'rigid_max_widget_lines':
+        // Enabled if max_widget_lines is set (even 0 means "configured").
+        return preferences.containsKey('max_widget_lines');
+
+      case 'rigid_no_raw_async':
+        return preferences['no_raw_async'] == true;
+
+      case 'rigid_layer_boundaries':
+        // Only enabled when layers are defined.
+        return preferences.containsKey('layers');
 
       default:
         return false;

@@ -98,7 +98,7 @@ Run:
 dart run custom_lint
 ```
 
-This activates the 16 custom lint rules. Any violations will appear as
+This activates the 19 custom lint rules. Any violations will appear as
 errors or warnings with the `rigid_` prefix.
 
 **Checkpoint:** Output should show rule violations (if any exist) prefixed
