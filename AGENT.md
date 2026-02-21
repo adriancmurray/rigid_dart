@@ -57,7 +57,7 @@ Run:
 dart run custom_lint
 ```
 
-This activates the 12 custom lint rules. Any violations will appear as
+This activates the 15 custom lint rules. Any violations will appear as
 errors or warnings with the `rigid_` prefix.
 
 **Checkpoint:** Output should show rule violations (if any exist) prefixed
@@ -81,8 +81,11 @@ When rigid_dart flags violations, fix them according to these patterns:
 | `rigid_no_hardcoded_text_style` | Replace raw `TextStyle(fontSize: N)` with `Theme.of(context).textTheme.*` |
 | `rigid_no_magic_numbers` | Extract layout literals to named constants or spacing tokens |
 | `rigid_no_will_pop_scope` | Replace `WillPopScope` with `PopScope(canPop:, onPopInvokedWithResult:)` |
-| `rigid_no_with_opacity` | Replace `.withOpacity(x)` with `.withValues(alpha: x)` |
-| `rigid_no_dynamic` | Replace `dynamic` with an explicit type, `Object?`, or a generic parameter |
+| `rigid_no_with_opacity` | Replace `.withOpacity(x)` with `.withValues(alpha: x)` — **quick fix available** |
+| `rigid_no_dynamic` | Replace `dynamic` with an explicit type, `Object?`, or a generic parameter — **quick fix available** |
+| `rigid_no_build_context_across_async` | Add `if (!context.mounted) return;` guard after the `await`, or capture values before the `await` |
+| `rigid_dispose_required` | Add `.dispose()` or `.cancel()` call in the `dispose()` method |
+| `rigid_no_print` | Replace `print()` with `debugPrint()` or a structured logger |
 
 ---
 
@@ -351,15 +354,23 @@ class NoGlobalKeys extends DartLintRule {
     errorSeverity: DiagnosticSeverity.ERROR,
   );
 
+  // Use TypeChecker for type-resolved detection (catches aliases/subclasses).
+  static const _globalKey = TypeChecker.fromName(
+    'GlobalKey',
+    packageName: 'flutter',
+  );
+
   @override
   void run(
     CustomLintResolver resolver,
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
+    if (isGeneratedFile(resolver.path)) return;
+
     context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name.lexeme;
-      if (typeName == 'GlobalKey') {
+      final type = node.staticType;
+      if (type != null && _globalKey.isExactlyType(type)) {
         reporter.atNode(node, code);
       }
     });

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/rules-12-blue?style=flat-square" alt="12 rules">
+  <img src="https://img.shields.io/badge/rules-15-blue?style=flat-square" alt="15 rules">
   <img src="https://img.shields.io/badge/severity-ERROR-red?style=flat-square" alt="Error severity">
   <img src="https://img.shields.io/badge/dart-%3E%3D3.0-0175C2?style=flat-square&logo=dart" alt="Dart 3+">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
@@ -27,8 +27,10 @@ catch at compile time. AI agents make this worse — they generate code that
 
 ## The Solution
 
-Rigid Dart is a `custom_lint` plugin that enforces **12 rules** as hard
-analyzer errors. It also ships a **strict `analysis_options.yaml`** base
+Rigid Dart is a `custom_lint` plugin that enforces **15 rules** as hard
+analyzer errors. Every rule uses **TypeChecker-based type resolution** —
+it catches aliases, subclasses, and reexports, not just string names.
+It also ships **3 quick fixes**, a **strict `analysis_options.yaml`** base,
 and an optional **PATH wrapper** that blocks `flutter run` until your code
 is clean.
 
@@ -60,13 +62,15 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 | `rigid_constrained_text_field` | 🔴 | `TextField` in `Row` without width constraint |
 
 ### Phase 2: State Discipline
-*Enforces Riverpod. Bans legacy state patterns.*
+*Enforces Riverpod. Prevents memory leaks and async crashes.*
 
 | Rule | Sev | What it catches |
 |------|-----|-----------------|
-| `rigid_no_set_state` | 🔴 | Any `setState()` call |
-| `rigid_no_change_notifier` | 🔴 | `ChangeNotifier` subclass/mixin |
+| `rigid_no_set_state` | 🔴 | Any `setState()` call (type-resolved: checks receiver is `State<T>`) |
+| `rigid_no_change_notifier` | 🔴 | `ChangeNotifier` subclass/mixin (catches via `isAssignableFrom`) |
 | `rigid_exhaustive_async` | 🔴 | Direct `.value` on `AsyncValue` without `.when()` |
+| `rigid_no_build_context_across_async` | 🔴 | `BuildContext` used after `await` without `mounted` check |
+| `rigid_dispose_required` | 🔴 | Disposable controllers (AnimationController, FocusNode, etc.) not disposed |
 
 ### Phase 3: Architecture
 *Enforces design system usage. Bans magic values.*
@@ -82,9 +86,10 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 
 | Rule | Sev | What it catches |
 |------|-----|-----------------|
-| `rigid_no_will_pop_scope` | 🔴 | Deprecated `WillPopScope` |
-| `rigid_no_with_opacity` | 🔴 | Deprecated `.withOpacity()` |
-| `rigid_no_dynamic` | 🔴 | Explicit `dynamic` type annotations |
+| `rigid_no_will_pop_scope` | 🔴 | Deprecated `WillPopScope` → **quick fix: PopScope** |
+| `rigid_no_with_opacity` | 🔴 | Deprecated `.withOpacity()` → **quick fix: .withValues(alpha:)** |
+| `rigid_no_dynamic` | 🔴 | Explicit `dynamic` type annotations → **quick fix: Object?** |
+| `rigid_no_print` | 🟡 | `print()` calls in non-test code |
 
 ---
 
@@ -122,9 +127,19 @@ analyzer:
 # Standard analysis (strict options from rigid_dart)
 dart analyze --fatal-infos
 
-# Custom rules (the 12 rigid_* rules)
+# Custom rules (the 15 rigid_* rules)
 dart run custom_lint
 ```
+
+### Quick Fixes
+
+Three rules offer IDE quick fixes (lightbulb menu):
+
+| Rule | Quick fix |
+|------|-----------|
+| `rigid_no_with_opacity` | Replace `.withOpacity(x)` → `.withValues(alpha: x)` |
+| `rigid_no_will_pop_scope` | Replace `WillPopScope` → `PopScope` |
+| `rigid_no_dynamic` | Replace `dynamic` → `Object?` |
 
 ---
 
