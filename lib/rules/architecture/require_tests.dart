@@ -72,7 +72,8 @@ class RequireTests extends DartLintRule {
             name: 'rigid_require_tests',
             problemMessage:
                 'This file has no corresponding test file. '
-                'Create test/${dirName}/${baseName}_test.dart with adversarial tests.',
+                'Create test/$dirName/${baseName}_test.dart '
+                '(mkdir -p the directory if needed) with adversarial tests.',
             errorSeverity: DiagnosticSeverity.WARNING,
           ),
         );
