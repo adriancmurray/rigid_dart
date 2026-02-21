@@ -1,6 +1,5 @@
 <p align="center">
-  <!-- Replace with generated header image -->
-  <!-- <img src="assets/header.png" alt="Rigid Dart" width="100%"> -->
+  <img src="assets/header.jpeg" alt="Rigid Dart" width="100%">
 </p>
 
 <h1 align="center">🦀 Rigid Dart</h1>
