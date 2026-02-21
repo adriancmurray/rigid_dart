@@ -41,8 +41,20 @@ class NoHardcodedColors extends DartLintRule {
     });
 
     // Catch Colors.red, Colors.blue, etc.
+    // Type-resolved: verify the prefix resolves to Flutter's Colors class.
     context.registry.addPrefixedIdentifier((node) {
       if (node.prefix.name != 'Colors') return;
+
+      // Check that the Colors prefix is from Flutter material/cupertino.
+      final element = node.prefix.element;
+      if (element == null) return;
+      final source = element.firstFragment.libraryFragment?.source;
+      if (source == null) return;
+      final uri = source.uri.toString();
+      if (!uri.contains('flutter') && !uri.contains('material') && !uri.contains('cupertino')) {
+        return;
+      }
+
       if (isInsideThemeDefinition(node)) return;
 
       reporter.atNode(node, code);

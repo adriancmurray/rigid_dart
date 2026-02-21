@@ -24,6 +24,7 @@ import 'package:rigid_dart/rules/state/no_set_state.dart';
 import 'package:rigid_dart/rules/architecture/no_hardcoded_colors.dart';
 import 'package:rigid_dart/rules/architecture/no_hardcoded_text_style.dart';
 import 'package:rigid_dart/rules/architecture/no_magic_numbers.dart';
+import 'package:rigid_dart/rules/architecture/require_tests.dart';
 // ── Freshness ─────────────────────────────────────────────────────────
 import 'package:rigid_dart/rules/freshness/no_dynamic.dart';
 import 'package:rigid_dart/rules/freshness/no_print.dart';
@@ -49,6 +50,7 @@ class _RigidDartPlugin extends PluginBase {
     NoHardcodedColors(),
     NoHardcodedTextStyle(),
     NoMagicNumbers(),
+    RequireTests(),
     // Phase 4: Freshness (4 rules)
     NoWillPopScope(),
     NoWithOpacity(),
