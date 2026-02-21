@@ -5,6 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import '../../src/fixes.dart';
 import '../../src/types.dart';
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// `.withOpacity()` is deprecated. Use `.withValues(alpha:)` instead.
 ///
@@ -28,6 +29,7 @@ class NoWithOpacity extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addMethodInvocation((node) {
       if (node.methodName.name != 'withOpacity') return;

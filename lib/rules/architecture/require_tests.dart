@@ -6,6 +6,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import 'package:path/path.dart' as p;
 
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// Flags `lib/` files that have no corresponding `_test.dart` file.
 ///
@@ -38,6 +39,7 @@ class RequireTests extends DartLintRule {
   ) {
     final filePath = resolver.path;
     if (isGeneratedFile(filePath)) return;
+    if (!RigidConfig.forFile(filePath).isEnabled(code.name)) return;
     if (isTestFile(filePath)) return;
 
     // Only check files under lib/.

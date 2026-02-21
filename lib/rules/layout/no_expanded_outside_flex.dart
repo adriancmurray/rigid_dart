@@ -5,6 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../src/types.dart';
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// Expanded/Flexible must be a direct child of Row, Column, Flex, or Wrap.
 ///
@@ -28,6 +29,7 @@ class NoExpandedOutsideFlex extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addInstanceCreationExpression((node) {
       final type = node.staticType;

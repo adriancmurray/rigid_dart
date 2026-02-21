@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// Bans `print()` calls. Use a logger or `debugPrint` instead.
 class NoPrint extends DartLintRule {
@@ -23,6 +24,7 @@ class NoPrint extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
     if (isTestFile(resolver.path)) return;
 
     context.registry.addMethodInvocation((node) {

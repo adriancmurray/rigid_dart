@@ -5,6 +5,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 import '../../src/fixes.dart';
 import '../../src/types.dart';
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// WillPopScope is deprecated. Use PopScope instead.
 ///
@@ -27,6 +28,7 @@ class NoWillPopScope extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addInstanceCreationExpression((node) {
       final type = node.staticType;

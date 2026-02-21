@@ -40,12 +40,53 @@ analyzer:
     - custom_lint
 ```
 
-You may add project-specific overrides under `linter: rules:` but do NOT
-disable any rigid_dart rules globally. Use `// ignore: rule_name` for
-one-off suppressions only.
+Rigid Dart rules are split into **universal** (crash/leak prevention — always on)
+and **opinionated** (architecture preference — configurable via `rigid_dart.yaml`).
 
 **Checkpoint:** Run `dart analyze`. You should see rigid_dart's strict
 analysis options take effect (e.g., `strict-casts`, `strict-inference`).
+
+---
+
+## Step 2.5: Configure preferences (interactive)
+
+**Ask the user these questions** and generate `rigid_dart.yaml` in the project root:
+
+1. **"What preset level?"** → `strict` | `balanced` | `safety`
+   - `strict`: All 16 rules as errors
+   - `balanced` (default): Universal rules as errors. Opinionated rules
+     enabled based on preferences below, as warnings.
+   - `safety`: Only universal rules (crash/leak prevention). Opinionated off.
+
+2. **"What state management do you use?"** → `riverpod` | `bloc` | `provider` | `none`
+   - If `riverpod`: enables `no_set_state`, `no_change_notifier`, `exhaustive_async`
+   - Otherwise: those rules stay off
+
+3. **"Do you enforce a centralized theme system?"** → `true` | `false`
+   - If `true`: enables `no_hardcoded_colors`, `no_hardcoded_text_style`
+
+4. **"Should tests be required for all lib/ files?"** → `true` | `false`
+   - If `true`: enables `require_tests`
+
+Generate the config file based on answers:
+
+```yaml
+# rigid_dart.yaml — edit anytime to change rule behavior
+preset: balanced
+
+preferences:
+  state_management: riverpod  # riverpod | bloc | provider | none
+  theme_system: true
+  require_tests: false
+
+# Per-rule overrides (optional). Use rule name without "rigid_" prefix.
+# Values: true (enable as error), false (disable), "warning" (downgrade).
+# rules:
+#   no_magic_numbers: warning
+#   no_print: false
+```
+
+**Checkpoint:** Verify `rigid_dart.yaml` exists in project root.
 
 ---
 
@@ -178,6 +219,12 @@ Create `~/bin/flutter`:
 # Rigid Dart -- PATH wrapper for flutter
 # Intercepts run/build/test with mandatory analysis pass.
 set -euo pipefail
+
+# Escape hatch — bypass rigid gate entirely.
+# Usage: RIGID_BYPASS=true flutter run
+if [ "${RIGID_BYPASS:-}" = "true" ]; then
+  exec "$(which -a flutter | grep -v "$HOME/bin" | head -1)" "$@"
+fi
 
 # Find the real flutter binary (skip this wrapper).
 REAL_FLUTTER=""

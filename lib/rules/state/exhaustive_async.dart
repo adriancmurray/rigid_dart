@@ -3,6 +3,7 @@ import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// AsyncValue must be handled exhaustively with .when(), not .value.
 ///
@@ -25,6 +26,7 @@ class ExhaustiveAsync extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addPropertyAccess((node) {
       if (node.propertyName.name != 'value') return;

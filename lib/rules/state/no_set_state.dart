@@ -4,6 +4,7 @@ import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../src/types.dart';
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// Bans `setState()` calls. Use Riverpod instead.
 ///
@@ -27,6 +28,7 @@ class NoSetState extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addMethodInvocation((node) {
       if (node.methodName.name != 'setState') return;

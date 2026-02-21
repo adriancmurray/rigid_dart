@@ -4,6 +4,7 @@ import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
 import '../../src/utils.dart';
+import '../../src/config.dart';
 
 /// Numeric literals in layout code must be named constants or design tokens.
 class NoMagicNumbers extends DartLintRule {
@@ -47,6 +48,7 @@ class NoMagicNumbers extends DartLintRule {
     CustomLintContext context,
   ) {
     if (isGeneratedFile(resolver.path)) return;
+    if (!RigidConfig.forFile(resolver.path).isEnabled(code.name)) return;
 
     context.registry.addNamedExpression((node) {
       if (!_layoutParams.contains(node.name.label.name)) return;
