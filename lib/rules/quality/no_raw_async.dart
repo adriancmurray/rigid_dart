@@ -54,18 +54,58 @@ class NoRawAsync extends DartLintRule {
     });
   }
 
+  // Methods whose awaits are inherently safe (won't throw in normal use).
+  static const _safeAwaits = {
+    'showDialog',
+    'showModalBottomSheet',
+    'showCupertinoDialog',
+    'showDatePicker',
+    'showTimePicker',
+    'showSearch',
+    'showMenu',
+    'push',
+    'pushNamed',
+    'pushReplacement',
+    'pushReplacementNamed',
+    'popAndPushNamed',
+    'pushAndRemoveUntil',
+    'pushNamedAndRemoveUntil',
+    'maybePop',
+    'delayed',
+    'wait',
+    'animateTo',
+    'forward',
+    'reverse',
+    'fling',
+    'nextFrame',
+    'precacheImage',
+    'ensureInitialized',
+  };
+
   void _checkBody(FunctionBody body, AstNode? nameNode, DiagnosticReporter reporter) {
     // Only check async bodies.
     if (body.keyword?.lexeme != 'async') return;
     if (body.star != null) return; // async* generators are different.
 
-    // Walk the body to find awaits and try statements.
-    var hasAwait = false;
+    // Walk the body to find awaits, try statements, and safe calls.
+    var hasUnsafeAwait = false;
     var hasTry = false;
 
     void visit(AstNode node) {
-      if (node is AwaitExpression) hasAwait = true;
       if (node is TryStatement) hasTry = true;
+      if (node is AwaitExpression) {
+        // Check if the awaited expression is a known safe method.
+        final expr = node.expression;
+        if (expr is MethodInvocation) {
+          if (!_safeAwaits.contains(expr.methodName.name)) {
+            hasUnsafeAwait = true;
+          }
+        } else if (expr is FunctionExpressionInvocation) {
+          hasUnsafeAwait = true; // Dynamic calls are never safe.
+        } else {
+          hasUnsafeAwait = true;
+        }
+      }
       // Don't recurse into nested functions — they have their own scope.
       if (node is FunctionExpression && node != body.parent) return;
       if (node is FunctionDeclaration) return;
@@ -78,7 +118,7 @@ class NoRawAsync extends DartLintRule {
       visit(body.expression);
     }
 
-    if (hasAwait && !hasTry) {
+    if (hasUnsafeAwait && !hasTry) {
       final reportNode = nameNode ?? body;
       reporter.atNode(reportNode, code);
     }

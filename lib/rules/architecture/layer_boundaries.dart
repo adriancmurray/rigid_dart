@@ -56,16 +56,37 @@ class LayerBoundaries extends DartLintRule {
       final uri = node.uri.stringValue;
       if (uri == null) return;
 
-      // Only check relative imports (package imports have different semantics).
-      if (!uri.startsWith('.') && !uri.startsWith('/')) return;
+      // Skip dart: SDK imports.
+      if (uri.startsWith('dart:')) return;
 
-      // Resolve the imported path relative to the current file.
-      final currentDir = p.dirname(filePath);
-      final importedPath = p.normalize(p.join(currentDir, uri));
+      String? importedLayer;
 
-      final importedLayer = _layerForPath(importedPath, layers);
-      if (importedLayer == null) return; // Imported file not in a defined layer.
-      if (importedLayer == currentLayer) return; // Same layer — always OK.
+      if (uri.startsWith('.') || uri.startsWith('/')) {
+        // Relative import — resolve to absolute path.
+        final currentDir = p.dirname(filePath);
+        final importedPath = p.normalize(p.join(currentDir, uri));
+        importedLayer = _layerForPath(importedPath, layers);
+      } else if (uri.startsWith('package:')) {
+        // Package import — extract the path after 'package:name/'.
+        // e.g. 'package:my_app/data/api.dart' → check if 'data' is a layer.
+        final parts = uri.split('/');
+        if (parts.length >= 2) {
+          // parts[0] = 'package:my_app', parts[1..] = path segments
+          // Check each segment against layer names.
+          for (var i = 1; i < parts.length - 1; i++) {
+            final segment = parts[i];
+            if (layers.containsKey(segment)) {
+              importedLayer = segment;
+              break;
+            }
+          }
+        }
+      } else {
+        return; // Unknown import type.
+      }
+
+      if (importedLayer == null) return;
+      if (importedLayer == currentLayer) return; // Same layer — OK.
 
       if (!allowedLayers.contains(importedLayer)) {
         reporter.atNode(

@@ -31,11 +31,13 @@ const _ruleCategories = <String, RuleCategory>{
   'rigid_max_widget_lines': RuleCategory.opinionated,
   'rigid_no_raw_async': RuleCategory.opinionated,
   'rigid_layer_boundaries': RuleCategory.opinionated,
+  'rigid_min_test_assertions': RuleCategory.opinionated,
+  'rigid_require_key_in_list': RuleCategory.opinionated,
 };
 
 /// Preset definitions. Each maps rule names to enabled/disabled.
 enum Preset {
-  /// All 19 rules enabled as errors.
+  /// All 21 rules enabled as errors.
   strict,
 
   /// Universal rules as errors. Opinionated rules enabled based on

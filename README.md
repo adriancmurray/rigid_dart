@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/rules-19-blue?style=flat-square" alt="19 rules">
+  <img src="https://img.shields.io/badge/rules-21-blue?style=flat-square" alt="21 rules">
   <img src="https://img.shields.io/badge/severity-ERROR-red?style=flat-square" alt="Error severity">
   <img src="https://img.shields.io/badge/dart-%3E%3D3.0-0175C2?style=flat-square&logo=dart" alt="Dart 3+">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
@@ -27,12 +27,12 @@ catch at compile time. AI agents make this worse — they generate code that
 
 ## The Solution
 
-Rigid Dart is a `custom_lint` plugin that enforces **19 rules** as hard
+Rigid Dart is a `custom_lint` plugin that enforces **21 rules** as hard
 analyzer errors. Every rule uses **TypeChecker-based type resolution** —
 it catches aliases, subclasses, and reexports, not just string names.
 It also ships **3 quick fixes**, a **strict `analysis_options.yaml`** base,
-and an optional **PATH wrapper** that blocks `flutter run` until your code
-is clean.
+a **configurable presets system**, and an optional **PATH wrapper** that
+blocks `flutter run` until your code is clean.
 
 ```
 🦀 Rigid Dart gate -- analyzing before compile...
@@ -80,6 +80,8 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 | `rigid_no_hardcoded_colors` | 🔴 | `Color(0xFF...)` or `Colors.*` outside theme definitions |
 | `rigid_no_hardcoded_text_style` | 🟡 | Raw `TextStyle(fontSize: N)` outside theme definitions |
 | `rigid_no_magic_numbers` | 🟡 | Literal numbers in layout params (padding, margin, etc.) |
+| `rigid_require_tests` | 🟡 | `lib/` files without corresponding `test/` files |
+| `rigid_layer_boundaries` | 🔴 | Cross-layer imports violating user-defined architecture |
 
 ### Phase 4: Freshness
 *Bans deprecated APIs. Enforces modern Dart.*
@@ -90,6 +92,16 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 | `rigid_no_with_opacity` | 🔴 | Deprecated `.withOpacity()` → **quick fix: .withValues(alpha:)** |
 | `rigid_no_dynamic` | 🔴 | Explicit `dynamic` type annotations → **quick fix: Object?** |
 | `rigid_no_print` | 🟡 | `print()` calls in non-test code |
+
+### Phase 5: Quality
+*Prevents sloppy agent patterns.*
+
+| Rule | Sev | What it catches |
+|------|-----|-----------------|
+| `rigid_max_widget_lines` | 🟡 | Widget classes exceeding configurable line threshold (default 250) |
+| `rigid_no_raw_async` | 🟡 | Async functions with `await` but no `try/catch` |
+| `rigid_min_test_assertions` | 🟡 | Test files with test blocks but zero `expect()` calls |
+| `rigid_require_key_in_list` | 🟡 | Widgets in list builders without explicit `Key` parameter |
 
 ---
 

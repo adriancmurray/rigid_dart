@@ -28,7 +28,9 @@ import 'package:rigid_dart/rules/architecture/no_magic_numbers.dart';
 import 'package:rigid_dart/rules/architecture/require_tests.dart';
 // ── Quality ───────────────────────────────────────────────────────────
 import 'package:rigid_dart/rules/quality/max_widget_lines.dart';
+import 'package:rigid_dart/rules/quality/min_test_assertions.dart';
 import 'package:rigid_dart/rules/quality/no_raw_async.dart';
+import 'package:rigid_dart/rules/quality/require_key_in_list.dart';
 // ── Freshness ─────────────────────────────────────────────────────────
 import 'package:rigid_dart/rules/freshness/no_dynamic.dart';
 import 'package:rigid_dart/rules/freshness/no_print.dart';
@@ -50,7 +52,7 @@ class _RigidDartPlugin extends PluginBase {
     ExhaustiveAsync(),
     NoBuildContextAcrossAsync(),
     DisposeRequired(),
-    // Phase 3: Architecture (4 rules)
+    // Phase 3: Architecture (5 rules)
     NoHardcodedColors(),
     NoHardcodedTextStyle(),
     NoMagicNumbers(),
@@ -61,8 +63,10 @@ class _RigidDartPlugin extends PluginBase {
     NoWithOpacity(),
     NoDynamic(),
     NoPrint(),
-    // Phase 5: Quality (2 rules)
+    // Phase 5: Quality (4 rules)
     MaxWidgetLines(),
     NoRawAsync(),
+    MinTestAssertions(),
+    RequireKeyInList(),
   ];
 }
