@@ -1,0 +1,18 @@
+name: rigid_dart
+description: >
+  Rust-grade guardrails for Dart/Flutter. Enforces layout safety,
+  state discipline, architecture boundaries, and modern Dart idioms
+  as hard analyzer errors via custom_lint.
+version: 0.1.0
+publish_to: "none"
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  custom_lint_builder: ^0.8.1
+  analyzer: ^8.0.0
+
+dev_dependencies:
+  test: ^1.25.0
+  custom_lint: ^0.8.1
