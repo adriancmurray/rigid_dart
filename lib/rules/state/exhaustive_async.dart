@@ -2,7 +2,11 @@ import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
+import '../../src/utils.dart';
+
 /// AsyncValue must be handled exhaustively with .when(), not .value.
+///
+/// Already type-resolved via staticType inspection.
 class ExhaustiveAsync extends DartLintRule {
   const ExhaustiveAsync() : super(code: _code);
 
@@ -20,6 +24,8 @@ class ExhaustiveAsync extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
+    if (isGeneratedFile(resolver.path)) return;
+
     context.registry.addPropertyAccess((node) {
       if (node.propertyName.name != 'value') return;
 

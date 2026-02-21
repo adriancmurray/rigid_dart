@@ -1,18 +1,31 @@
+
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Ban ChangeNotifier subclasses. Use Riverpod Notifier/AsyncNotifier.
+import '../../src/types.dart';
+import '../../src/utils.dart';
+
+/// Bans `ChangeNotifier` and `ValueNotifier` subclasses.
+///
+/// Type-resolved: uses [TypeChecker.isAssignableFrom] to catch any class
+/// that extends, mixes in, or implements ChangeNotifier — even through
+/// intermediate classes.
 class NoChangeNotifier extends DartLintRule {
   const NoChangeNotifier() : super(code: _code);
 
   static const _code = LintCode(
     name: 'rigid_no_change_notifier',
     problemMessage:
-        'ChangeNotifier is banned. Use Riverpod Notifier or '
-        'AsyncNotifier for reactive state management.',
+        'ChangeNotifier/ValueNotifier is banned. '
+        'Use Riverpod Notifier or AsyncNotifier for state management.',
     errorSeverity: DiagnosticSeverity.ERROR,
   );
+
+  static const _notifierFamily = TypeChecker.any([
+    FlutterTypes.changeNotifier,
+    FlutterTypes.valueNotifier,
+  ]);
 
   @override
   void run(
@@ -20,22 +33,15 @@ class NoChangeNotifier extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
-    context.registry.addClassDeclaration((node) {
-      final extendsClause = node.extendsClause;
-      if (extendsClause != null) {
-        final superName = extendsClause.superclass.name.lexeme;
-        if (superName == 'ChangeNotifier') {
-          reporter.atNode(extendsClause.superclass, code);
-        }
-      }
+    if (isGeneratedFile(resolver.path)) return;
 
-      final withClause = node.withClause;
-      if (withClause != null) {
-        for (final mixin in withClause.mixinTypes) {
-          if (mixin.name.lexeme == 'ChangeNotifier') {
-            reporter.atNode(mixin, code);
-          }
-        }
+    context.registry.addClassDeclaration((node) {
+      final element = node.declaredFragment?.element;
+      if (element == null) return;
+
+      // Check if this class is assignable to ChangeNotifier/ValueNotifier.
+      if (_notifierFamily.isAssignableFrom(element)) {
+        reporter.atNode(node, code);
       }
     });
   }

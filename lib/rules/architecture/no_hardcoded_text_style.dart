@@ -1,17 +1,22 @@
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 
-/// TextStyle must use theme typography, not raw fontSize values.
+import '../../src/types.dart';
+import '../../src/utils.dart';
+
+/// TextStyle must come from the theme, not raw fontSize values.
+///
+/// Type-resolved: checks the constructed type is `TextStyle` from Flutter.
 class NoHardcodedTextStyle extends DartLintRule {
   const NoHardcodedTextStyle() : super(code: _code);
 
   static const _code = LintCode(
     name: 'rigid_no_hardcoded_text_style',
     problemMessage:
-        'Hardcoded TextStyle detected. Use theme typography '
-        '(Theme.of(context).textTheme.*) or design system text styles.',
+        'Raw TextStyle with hardcoded fontSize detected. '
+        'Use Theme.of(context).textTheme.* instead.',
     errorSeverity: DiagnosticSeverity.WARNING,
   );
 
@@ -21,42 +26,23 @@ class NoHardcodedTextStyle extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
-    context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name.lexeme;
-      if (typeName != 'TextStyle') return;
-      if (_isInsideThemeOrStyleDefinition(node)) return;
+    if (isGeneratedFile(resolver.path)) return;
 
-      for (final arg in node.argumentList.arguments) {
-        if (arg is NamedExpression && arg.name.label.name == 'fontSize') {
-          if (arg.expression is IntegerLiteral ||
-              arg.expression is DoubleLiteral) {
-            reporter.atNode(node.constructorName, code);
-            return;
-          }
-        }
+    context.registry.addInstanceCreationExpression((node) {
+      final type = node.staticType;
+      if (type == null) return;
+
+      if (!FlutterTypes.textStyle.isExactlyType(type)) return;
+      if (isInsideThemeDefinition(node)) return;
+
+      // Only flag if fontSize is present as a named argument.
+      final hasFontSize = node.argumentList.arguments.any(
+        (arg) => arg is NamedExpression && arg.name.label.name == 'fontSize',
+      );
+
+      if (hasFontSize) {
+        reporter.atNode(node.constructorName, code);
       }
     });
-  }
-
-  static bool _isInsideThemeOrStyleDefinition(AstNode node) {
-    var current = node.parent;
-    while (current != null) {
-      if (current is ClassDeclaration) {
-        final name = current.name.lexeme.toLowerCase();
-        if (name.contains('theme') || name.contains('style') ||
-            name.contains('typography')) {
-          return true;
-        }
-      }
-      if (current is VariableDeclaration) {
-        final name = current.name.lexeme.toLowerCase();
-        if (name.contains('theme') || name.contains('style') ||
-            name.contains('typography')) {
-          return true;
-        }
-      }
-      current = current.parent;
-    }
-    return false;
   }
 }

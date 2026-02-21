@@ -2,15 +2,21 @@ import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-/// Use PopScope, not deprecated WillPopScope.
+import '../../src/fixes.dart';
+import '../../src/types.dart';
+import '../../src/utils.dart';
+
+/// WillPopScope is deprecated. Use PopScope instead.
+///
+/// Type-resolved: catches aliases and reexports via TypeChecker.
 class NoWillPopScope extends DartLintRule {
   const NoWillPopScope() : super(code: _code);
 
   static const _code = LintCode(
     name: 'rigid_no_will_pop_scope',
     problemMessage:
-        'WillPopScope is deprecated. Use PopScope with '
-        'canPop and onPopInvokedWithResult instead.',
+        'WillPopScope is deprecated. '
+        'Use PopScope(canPop:, onPopInvokedWithResult:) instead.',
     errorSeverity: DiagnosticSeverity.ERROR,
   );
 
@@ -20,11 +26,18 @@ class NoWillPopScope extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
+    if (isGeneratedFile(resolver.path)) return;
+
     context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name.lexeme;
-      if (typeName == 'WillPopScope') {
+      final type = node.staticType;
+      if (type == null) return;
+
+      if (FlutterTypes.willPopScope.isExactlyType(type)) {
         reporter.atNode(node.constructorName, code);
       }
     });
   }
+
+  @override
+  List<Fix> getFixes() => [NoWillPopScopeFix()];
 }

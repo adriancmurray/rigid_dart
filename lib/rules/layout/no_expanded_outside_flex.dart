@@ -1,13 +1,15 @@
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 
-/// Expanded/Flexible must be a direct child of Row, Column, or Flex.
+import '../../src/types.dart';
+import '../../src/utils.dart';
+
+/// Expanded/Flexible must be a direct child of Row, Column, Flex, or Wrap.
 ///
-/// This is the #1 runtime crash agents produce:
-/// `Expanded` placed inside a `Stack`, `Container`, or `Padding`
-/// causes "Incorrect use of ParentDataWidget" errors.
+/// Uses [TypeChecker] for type-resolved detection — catches aliases,
+/// subclasses, and reexports, not just string names.
 class NoExpandedOutsideFlex extends DartLintRule {
   const NoExpandedOutsideFlex() : super(code: _code);
 
@@ -19,24 +21,33 @@ class NoExpandedOutsideFlex extends DartLintRule {
     errorSeverity: DiagnosticSeverity.ERROR,
   );
 
-  static const _flexTypes = {'Row', 'Column', 'Flex', 'Wrap'};
-  static const _expandedTypes = {'Expanded', 'Flexible'};
-
   @override
   void run(
     CustomLintResolver resolver,
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
-    context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name.lexeme;
-      if (!_expandedTypes.contains(typeName)) return;
+    if (isGeneratedFile(resolver.path)) return;
 
+    context.registry.addInstanceCreationExpression((node) {
+      final type = node.staticType;
+      if (type == null) return;
+
+      // Is this an Expanded or Flexible?
+      if (!FlutterTypes.expanded.isExactlyType(type) &&
+          !FlutterTypes.flexible.isExactlyType(type)) {
+        return;
+      }
+
+      // Walk up to the nearest parent widget constructor.
       final parent = _findParentWidgetCreation(node);
       if (parent == null) return;
 
-      final parentTypeName = parent.constructorName.type.name.lexeme;
-      if (!_flexTypes.contains(parentTypeName)) {
+      final parentType = parent.staticType;
+      if (parentType == null) return;
+
+      // Parent must be a Flex-family widget.
+      if (!FlutterTypes.flexFamily.isAssignableFromType(parentType)) {
         reporter.atNode(node.constructorName, code);
       }
     });

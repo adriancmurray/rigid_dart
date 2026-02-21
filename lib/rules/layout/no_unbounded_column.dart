@@ -1,26 +1,25 @@
+import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
 import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
 import 'package:custom_lint_builder/custom_lint_builder.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 
-/// Column/ListView inside another scrollable without shrinkWrap or
-/// bounded height constraints.
+import '../../src/types.dart';
+import '../../src/utils.dart';
+
+/// Nesting scrollable widgets without constraints causes unbounded height.
+///
+/// Catches Column/ListView/GridView nested inside another scrollable
+/// without a SizedBox or ConstrainedBox providing bounds.
 class NoUnboundedColumn extends DartLintRule {
   const NoUnboundedColumn() : super(code: _code);
 
   static const _code = LintCode(
     name: 'rigid_no_unbounded_column',
     problemMessage:
-        'Column or ListView nested inside a scrollable without '
-        'shrinkWrap or bounded height. Wrap in SizedBox/ConstrainedBox '
-        'or set shrinkWrap: true.',
+        'Potentially unbounded widget nested inside a scrollable. '
+        'Wrap in SizedBox with a height, or use shrinkWrap: true.',
     errorSeverity: DiagnosticSeverity.WARNING,
   );
-
-  static const _scrollableTypes = {
-    'ListView', 'GridView', 'SingleChildScrollView', 'CustomScrollView',
-  };
-  static const _verticalTypes = {'Column', 'ListView'};
 
   @override
   void run(
@@ -28,68 +27,53 @@ class NoUnboundedColumn extends DartLintRule {
     DiagnosticReporter reporter,
     CustomLintContext context,
   ) {
+    if (isGeneratedFile(resolver.path)) return;
+
     context.registry.addInstanceCreationExpression((node) {
-      final typeName = node.constructorName.type.name.lexeme;
-      if (!_verticalTypes.contains(typeName)) return;
+      final type = node.staticType;
+      if (type == null) return;
 
-      final scrollableAncestor = _findAncestorOfType(node, _scrollableTypes);
-      if (scrollableAncestor == null) return;
-      if (typeName == 'ListView' && _hasShrinkWrap(node)) return;
-      if (_hasBoundedHeightAncestor(node, scrollableAncestor)) return;
+      // Is this a Column or scrollable?
+      final isColumn = FlutterTypes.column.isExactlyType(type);
+      final isScrollable = FlutterTypes.scrollableFamily.isAssignableFromType(
+        type,
+      );
+      if (!isColumn && !isScrollable) return;
 
-      reporter.atNode(node.constructorName, code);
+      // Check for shrinkWrap: true
+      if (_hasShrinkWrap(node)) return;
+
+      // Walk up — is there a parent scrollable without a SizedBox boundary?
+      var current = node.parent;
+      while (current != null) {
+        if (current is InstanceCreationExpression) {
+          final parentType = current.staticType;
+          if (parentType == null) break;
+
+          // If we hit a SizedBox, constraints are applied — OK.
+          if (FlutterTypes.sizedBox.isExactlyType(parentType)) return;
+
+          // If we hit another scrollable, that's the problem.
+          if (FlutterTypes.scrollableFamily.isAssignableFromType(parentType) ||
+              FlutterTypes.column.isExactlyType(parentType)) {
+            reporter.atNode(node.constructorName, code);
+            return;
+          }
+        }
+        current = current.parent;
+      }
     });
   }
 
   static bool _hasShrinkWrap(InstanceCreationExpression node) {
     for (final arg in node.argumentList.arguments) {
-      if (arg is NamedExpression && arg.name.label.name == 'shrinkWrap') {
-        final expr = arg.expression;
-        if (expr is BooleanLiteral && expr.value) return true;
+      if (arg is NamedExpression &&
+          arg.name.label.name == 'shrinkWrap' &&
+          arg.expression is BooleanLiteral &&
+          (arg.expression as BooleanLiteral).value) {
+        return true;
       }
     }
     return false;
-  }
-
-  static bool _hasBoundedHeightAncestor(
-    InstanceCreationExpression node,
-    InstanceCreationExpression ancestor,
-  ) {
-    var current = node.parent;
-    while (current != null && current != ancestor) {
-      if (current is InstanceCreationExpression) {
-        final name = current.constructorName.type.name.lexeme;
-        if (name == 'SizedBox' || name == 'ConstrainedBox' || name == 'Container') {
-          if (_hasHeightArgument(current)) return true;
-        }
-      }
-      current = current.parent;
-    }
-    return false;
-  }
-
-  static bool _hasHeightArgument(InstanceCreationExpression node) {
-    for (final arg in node.argumentList.arguments) {
-      if (arg is NamedExpression) {
-        final name = arg.name.label.name;
-        if (name == 'height' || name == 'constraints') return true;
-      }
-    }
-    return false;
-  }
-
-  static InstanceCreationExpression? _findAncestorOfType(
-    InstanceCreationExpression node,
-    Set<String> types,
-  ) {
-    var current = node.parent;
-    while (current != null) {
-      if (current is InstanceCreationExpression) {
-        final name = current.constructorName.type.name.lexeme;
-        if (types.contains(name)) return current;
-      }
-      current = current.parent;
-    }
-    return null;
   }
 }
