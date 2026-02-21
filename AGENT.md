@@ -254,3 +254,183 @@ PATH line from your shell config.
 4. **No `setState`, no `ChangeNotifier`.** Use Riverpod.
 5. **No `dynamic`.** Type everything explicitly.
 6. **No deprecated APIs.** Use `PopScope`, `.withValues(alpha:)`.
+
+---
+
+## Working with Rigid Dart
+
+### Daily workflow
+
+When you write code in a project that uses rigid_dart, your workflow is:
+
+1. **Write code normally.**
+2. **Run `dart analyze --fatal-infos`.** Fix any violations.
+3. **Run `dart run custom_lint`.** Fix any `rigid_*` violations.
+4. **Commit.** The pre-commit hook (Tier 2) will catch anything you missed.
+
+If Tier 3 (Compiler) is installed, steps 2-3 happen automatically when
+you run `flutter run`.
+
+### Suppressing a rule on one line
+
+```dart
+// ignore: rigid_no_hardcoded_colors
+final debugOverlay = Colors.red.withValues(alpha: 0.3);
+```
+
+### Suppressing a rule for an entire file
+
+Only do this in files where the rule genuinely does not apply (e.g.,
+a spacing tokens file, a theme definition file):
+
+```dart
+// ignore_for_file: rigid_no_magic_numbers
+
+/// Design system spacing tokens. This is where constants are DEFINED.
+const kSpacingXS = 4.0;
+const kSpacingSM = 8.0;
+const kSpacingMD = 16.0;
+const kSpacingLG = 24.0;
+const kSpacingXL = 32.0;
+```
+
+### Understanding severity levels
+
+- 🔴 **ERROR** — Must fix. The rule catches a bug or banned pattern.
+- 🟡 **WARNING** — Should fix. The rule catches a code smell.
+- 🔵 **INFO** — Consider fixing. The rule suggests a better pattern.
+
+### Theme definition files
+
+Files that DEFINE theme values (colors, text styles) need file-level
+suppressions. This is expected:
+
+```dart
+// ignore_for_file: rigid_no_hardcoded_colors, rigid_no_hardcoded_text_style
+
+/// App theme definition — the ONLY place hardcoded values are allowed.
+class AppTheme {
+  static final light = ThemeData(
+    colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF6750A4)),
+    // ...
+  );
+}
+```
+
+### What counts as "outside theme definitions"
+
+The color and text style rules flag violations everywhere EXCEPT:
+- Files with `theme` in the filename (e.g., `app_theme.dart`)
+- Lines with a `// ignore:` comment
+- Files with a `// ignore_for_file:` comment
+
+If your theme file isn't detected, add `// ignore_for_file:` at the top.
+
+---
+
+## Modifying Rigid Dart
+
+### Adding a new rule
+
+1. **Create the rule file** in `lib/rules/<phase>/`:
+
+```dart
+// lib/rules/state/no_global_keys.dart
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
+import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+import 'package:analyzer/dart/ast/ast.dart';
+
+class NoGlobalKeys extends DartLintRule {
+  const NoGlobalKeys() : super(code: _code);
+
+  static const _code = LintCode(
+    name: 'rigid_no_global_keys',       // Always prefix with rigid_
+    problemMessage:
+        'GlobalKey is banned. Use ValueKey or UniqueKey instead.',
+    errorSeverity: DiagnosticSeverity.ERROR,
+  );
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    DiagnosticReporter reporter,
+    CustomLintContext context,
+  ) {
+    context.registry.addInstanceCreationExpression((node) {
+      final typeName = node.constructorName.type.name.lexeme;
+      if (typeName == 'GlobalKey') {
+        reporter.atNode(node, code);
+      }
+    });
+  }
+}
+```
+
+2. **Register it** in `lib/rigid_dart.dart`:
+
+```dart
+import 'package:rigid_dart/rules/state/no_global_keys.dart';
+// In getLintRules():
+const NoGlobalKeys(),
+```
+
+3. **Verify** the package still compiles:
+
+```bash
+cd packages/rigid_dart && dart analyze
+```
+
+4. **Test** against a consumer project:
+
+```bash
+cd apps/your_app && dart run custom_lint
+```
+
+5. **Update AGENT.md** — add the new rule to the fix table in Step 4.
+
+### Changing a rule's severity
+
+Edit the `errorSeverity` in the rule's `LintCode` constructor:
+
+```dart
+errorSeverity: DiagnosticSeverity.ERROR,    // 🔴 Hard error
+errorSeverity: DiagnosticSeverity.WARNING,  // 🟡 Warning
+errorSeverity: DiagnosticSeverity.INFO,     // 🔵 Info
+```
+
+### Removing a rule
+
+1. Delete the rule file from `lib/rules/<phase>/`.
+2. Remove the import and registration from `lib/rigid_dart.dart`.
+3. Run `dart analyze` to confirm no broken imports.
+
+### Available AST callbacks
+
+The `context.registry` object provides callbacks for every AST node type.
+Common ones used in rigid_dart rules:
+
+| Callback | Use case |
+|----------|----------|
+| `addInstanceCreationExpression` | Catch `Widget(...)` constructors |
+| `addMethodInvocation` | Catch `.method()` calls |
+| `addNamedType` | Catch type annotations like `dynamic` |
+| `addClassDeclaration` | Catch class definitions and their supertypes |
+| `addPrefixedIdentifier` | Catch `Colors.red`, `Icons.star` patterns |
+| `addIntegerLiteral` / `addDoubleLiteral` | Catch magic numbers |
+| `addNamedExpression` | Catch named parameters in constructors |
+
+### Publishing changes
+
+After modifying rules, commit and push:
+
+```bash
+cd packages/rigid_dart
+dart analyze                    # Must show 0 issues
+git add -A
+git commit -m "Add rigid_no_global_keys rule"
+git push
+```
+
+Consumer projects pick up changes on next `flutter pub get`.
+

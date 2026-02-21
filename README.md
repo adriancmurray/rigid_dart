@@ -1,31 +1,97 @@
-# Rigid Dart
+<p align="center">
+  <!-- Replace with generated header image -->
+  <!-- <img src="assets/header.png" alt="Rigid Dart" width="100%"> -->
+</p>
 
-Rust-grade guardrails for Dart/Flutter. A `custom_lint` plugin that enforces layout safety, state discipline, architecture boundaries, and modern Dart idioms as hard analyzer errors.
+<h1 align="center">🦀 Rigid Dart</h1>
 
-## Why
+<p align="center">
+  <strong>Rust-grade guardrails for Dart & Flutter.</strong><br>
+  A <code>custom_lint</code> plugin that turns analyzer warnings into walls.
+</p>
 
-Dart's compiler is lenient. Agents (and humans) ship runtime crashes that Rust would catch at compile time. Rigid Dart closes this gap with 12 lint rules that act as a synthetic borrow checker for Flutter.
+<p align="center">
+  <img src="https://img.shields.io/badge/rules-12-blue?style=flat-square" alt="12 rules">
+  <img src="https://img.shields.io/badge/severity-ERROR-red?style=flat-square" alt="Error severity">
+  <img src="https://img.shields.io/badge/dart-%3E%3D3.0-0175C2?style=flat-square&logo=dart" alt="Dart 3+">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License">
+</p>
+
+---
+
+## The Problem
+
+Dart's compiler is lenient. It lets you ship layout crashes, untyped state,
+hardcoded colors, deprecated APIs, and `dynamic` casts that Rust would
+catch at compile time. AI agents make this worse — they generate code that
+*works* but violates every architecture principle you've established.
+
+## The Solution
+
+Rigid Dart is a `custom_lint` plugin that enforces **12 rules** as hard
+analyzer errors. It also ships a **strict `analysis_options.yaml`** base
+and an optional **PATH wrapper** that blocks `flutter run` until your code
+is clean.
+
+```
+🦀 Rigid Dart gate -- analyzing before compile...
+
+  error - lib/home_page.dart:42:9
+    Colors.blue is banned. Use Theme.of(context).colorScheme.* instead.
+    rigid_no_hardcoded_colors
+
+════════════════════════════════════════════════════════
+  ❌ RIGID DART: Analysis failed. Fix violations above.
+════════════════════════════════════════════════════════
+```
+
+The agent sees a build failure. It fixes the code. It retries. That's the loop.
+
+---
 
 ## Rules
 
-| Phase | Rule | Severity | Catches |
-|-------|------|----------|---------|
-| **Layout** | `rigid_no_expanded_outside_flex` | ERROR | `Expanded` outside `Row`/`Column`/`Flex` |
-| | `rigid_no_unbounded_column` | WARNING | Nested scrollables without constraints |
-| | `rigid_constrained_text_field` | ERROR | `TextField` in `Row` without width |
-| **State** | `rigid_no_set_state` | ERROR | `setState()` calls (use Riverpod) |
-| | `rigid_no_change_notifier` | ERROR | `ChangeNotifier` subclass/mixin |
-| | `rigid_exhaustive_async` | ERROR | `.value` on `AsyncValue` without `.when()` |
-| **Architecture** | `rigid_no_hardcoded_colors` | ERROR | `Color(0xFF...)` / `Colors.*` outside theme |
-| | `rigid_no_hardcoded_text_style` | WARNING | Raw `fontSize` literals outside theme |
-| | `rigid_no_magic_numbers` | WARNING | Magic numbers in layout params |
-| **Freshness** | `rigid_no_will_pop_scope` | ERROR | Deprecated `WillPopScope` |
-| | `rigid_no_with_opacity` | ERROR | Deprecated `.withOpacity()` |
-| | `rigid_no_dynamic` | ERROR | Explicit `dynamic` type annotations |
+### Phase 1: Layout Safety
+*Catches runtime crashes before they happen.*
 
-## Setup
+| Rule | Sev | What it catches |
+|------|-----|-----------------|
+| `rigid_no_expanded_outside_flex` | 🔴 | `Expanded`/`Flexible` outside `Row`/`Column`/`Flex` |
+| `rigid_no_unbounded_column` | 🟡 | Nested `Column`/`ListView` in scrollables without constraints |
+| `rigid_constrained_text_field` | 🔴 | `TextField` in `Row` without width constraint |
 
-### 1. Add dependencies
+### Phase 2: State Discipline
+*Enforces Riverpod. Bans legacy state patterns.*
+
+| Rule | Sev | What it catches |
+|------|-----|-----------------|
+| `rigid_no_set_state` | 🔴 | Any `setState()` call |
+| `rigid_no_change_notifier` | 🔴 | `ChangeNotifier` subclass/mixin |
+| `rigid_exhaustive_async` | 🔴 | Direct `.value` on `AsyncValue` without `.when()` |
+
+### Phase 3: Architecture
+*Enforces design system usage. Bans magic values.*
+
+| Rule | Sev | What it catches |
+|------|-----|-----------------|
+| `rigid_no_hardcoded_colors` | 🔴 | `Color(0xFF...)` or `Colors.*` outside theme definitions |
+| `rigid_no_hardcoded_text_style` | 🟡 | Raw `TextStyle(fontSize: N)` outside theme definitions |
+| `rigid_no_magic_numbers` | 🟡 | Literal numbers in layout params (padding, margin, etc.) |
+
+### Phase 4: Freshness
+*Bans deprecated APIs. Enforces modern Dart.*
+
+| Rule | Sev | What it catches |
+|------|-----|-----------------|
+| `rigid_no_will_pop_scope` | 🔴 | Deprecated `WillPopScope` |
+| `rigid_no_with_opacity` | 🔴 | Deprecated `.withOpacity()` |
+| `rigid_no_dynamic` | 🔴 | Explicit `dynamic` type annotations |
+
+---
+
+## Quick Start
+
+### 1. Install
 
 ```yaml
 # pubspec.yaml
@@ -33,10 +99,14 @@ dev_dependencies:
   custom_lint: ^0.8.1
   rigid_dart:
     git:
-      url: https://github.com/YOUR_USER/rigid_dart.git
+      url: https://github.com/adriancmurray/rigid_dart.git
 ```
 
-### 2. Include analysis options
+```bash
+flutter pub get
+```
+
+### 2. Configure
 
 ```yaml
 # analysis_options.yaml
@@ -47,34 +117,164 @@ analyzer:
     - custom_lint
 ```
 
-### 3. Run analysis
+### 3. Analyze
 
 ```bash
+# Standard analysis (strict options from rigid_dart)
 dart analyze --fatal-infos
+
+# Custom rules (the 12 rigid_* rules)
+dart run custom_lint
 ```
 
-### 4. (Optional) PATH wrapper
+---
 
-Drop `bin/flutter_gate` into `~/bin/flutter` to intercept `flutter run/build/test` with a mandatory analysis pass. Agents can't bypass what they can't see.
+## Enforcement Tiers
 
-## Suppressing rules
+| Tier | Name | Blocks | Agent can bypass? |
+|------|------|--------|-------------------|
+| 1 | **Advisor** | Nothing — IDE warnings only | ✅ Yes |
+| 2 | **Gatekeeper** | `git commit` | 🔶 Can still run locally |
+| 3 | **Compiler** | `flutter run/build/test` | ❌ No |
+
+See [AGENT.md](AGENT.md) for full setup instructions for each tier.
+
+---
+
+## Suppressing Rules
+
+Per-line only. Global suppression is not supported by design.
 
 ```dart
-// ignore: rigid_no_set_state
-setState(() { /* emergency escape hatch */ });
+// ignore: rigid_no_hardcoded_colors
+final debugColor = Colors.red; // Emergency escape hatch
 ```
 
-## Shared analysis options
+For multi-line blocks:
 
-`package:rigid_dart/analysis_options.yaml` includes strict Dart settings:
+```dart
+// ignore_for_file: rigid_no_magic_numbers
+// Only in spacing_tokens.dart where constants are DEFINED
+const kCardPadding = 16.0;
+const kSectionSpacing = 24.0;
+```
 
-- `strict-casts: true`
-- `strict-inference: true`
-- `avoid_dynamic_calls`
-- `always_declare_return_types`
-- `prefer_final_locals`
-- And more
+---
+
+## Modifying Rules
+
+### Adding a new rule
+
+1. Create a file in `lib/rules/<phase>/` (e.g., `lib/rules/state/no_global_keys.dart`)
+2. Extend `DartLintRule` from `custom_lint_builder`
+3. Define a `LintCode` with a `rigid_` prefix and appropriate severity
+4. Implement the `run` method using `context.registry.add*` callbacks
+5. Register the rule in `lib/rigid_dart.dart`
+
+Example skeleton:
+
+```dart
+import 'package:analyzer/error/error.dart' show DiagnosticSeverity;
+import 'package:analyzer/error/listener.dart' show DiagnosticReporter;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
+
+class NoGlobalKeys extends DartLintRule {
+  const NoGlobalKeys() : super(code: _code);
+
+  static const _code = LintCode(
+    name: 'rigid_no_global_keys',
+    problemMessage: 'GlobalKey is banned. Use ValueKey or UniqueKey.',
+    errorSeverity: DiagnosticSeverity.ERROR,
+  );
+
+  @override
+  void run(
+    CustomLintResolver resolver,
+    DiagnosticReporter reporter,
+    CustomLintContext context,
+  ) {
+    context.registry.addInstanceCreationExpression((node) {
+      // Your detection logic here
+      reporter.atNode(node, code);
+    });
+  }
+}
+```
+
+Then add to `lib/rigid_dart.dart`:
+
+```dart
+import 'package:rigid_dart/rules/state/no_global_keys.dart';
+// ...
+const NoGlobalKeys(),
+```
+
+### Changing severity
+
+Edit the `errorSeverity` parameter in the rule's `LintCode`:
+
+- `DiagnosticSeverity.ERROR` — hard error (red squiggly)
+- `DiagnosticSeverity.WARNING` — warning (yellow squiggly)
+- `DiagnosticSeverity.INFO` — informational (blue squiggly)
+
+### Disabling a rule
+
+Remove it from the `getLintRules` list in `lib/rigid_dart.dart`. Do not
+comment it out — unused imports trigger their own warnings.
+
+### Testing changes
+
+```bash
+cd packages/rigid_dart
+dart analyze  # Must show 0 issues
+```
+
+Then test against a consumer project:
+
+```bash
+cd apps/your_app
+flutter pub get          # Picks up local changes via path dep
+dart run custom_lint     # Verify your rule fires
+```
+
+---
+
+## Shared Analysis Options
+
+`package:rigid_dart/analysis_options.yaml` includes:
+
+```yaml
+analyzer:
+  language:
+    strict-casts: true       # No implicit dynamic downcasts
+    strict-inference: true   # No implicit dynamic in generics
+
+linter:
+  rules:
+    avoid_dynamic_calls: true
+    always_declare_return_types: true
+    prefer_final_locals: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    unawaited_futures: true
+    # ... and more
+```
+
+Projects that `include:` this file inherit all settings. Override
+specific rules in your project's `analysis_options.yaml` under
+`linter: rules:`.
+
+---
+
+## For AI Agents
+
+This repo includes [AGENT.md](AGENT.md) — a machine-readable playbook
+for IDE agents (Cursor, Windsurf, Claude Code, GitHub Copilot, etc.).
+Give an agent this repo URL and it can install, configure, and verify
+rigid_dart with zero guesswork.
+
+---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
