@@ -217,8 +217,26 @@ if [ "$SHOULD_GATE" = true ]; then
     echo ""
     exit 1
   fi
+
+  # Test gate: all tests must pass before compile.
+  # Skip if the command is already 'test' (avoid recursion).
+  if [ "$1" != "test" ]; then
+    echo ""
+    echo "🧪 Rigid Dart gate -- running tests..."
+    echo ""
+    if ! "$REAL_FLUTTER" test 2>&1; then
+      echo ""
+      echo "════════════════════════════════════════════════════════"
+      echo "  ❌ RIGID DART: Tests failed. Fix failures above."
+      echo "  Then retry: flutter $*"
+      echo "════════════════════════════════════════════════════════"
+      echo ""
+      exit 1
+    fi
+  fi
+
   echo ""
-  echo "🦀 Analysis clean. Proceeding to: flutter $*"
+  echo "🦀 Analysis + tests clean. Proceeding to: flutter $*"
   echo ""
 fi
 
