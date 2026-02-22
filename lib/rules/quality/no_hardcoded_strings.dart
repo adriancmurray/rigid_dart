@@ -79,9 +79,11 @@ class NoHardcodedStrings extends DartLintRule {
         final args = node.argumentList.arguments;
         if (args.isNotEmpty) {
           final first = args.first;
-          if (first is! NamedExpression && first is SimpleStringLiteral) {
-            if (_isUserVisible(first.value)) {
+          if (first is! NamedExpression) {
+            if (first is SimpleStringLiteral && _isUserVisible(first.value)) {
               reporter.atNode(first, code);
+            } else if (first is StringInterpolation) {
+              _checkInterpolation(first, reporter);
             }
           }
         }
@@ -94,6 +96,8 @@ class NoHardcodedStrings extends DartLintRule {
           final expr = arg.expression;
           if (expr is SimpleStringLiteral && _isUserVisible(expr.value)) {
             reporter.atNode(expr, code);
+          } else if (expr is StringInterpolation) {
+            _checkInterpolation(expr, reporter);
           }
         }
       }
@@ -107,6 +111,8 @@ class NoHardcodedStrings extends DartLintRule {
           final expr = arg.expression;
           if (expr is SimpleStringLiteral && _isUserVisible(expr.value)) {
             reporter.atNode(expr, code);
+          } else if (expr is StringInterpolation) {
+            _checkInterpolation(expr, reporter);
           }
         }
       }
@@ -124,5 +130,18 @@ class NoHardcodedStrings extends DartLintRule {
     // Multi-word camelCase might be a label.
     if (value.length > 3 && RegExp(r'[a-z][A-Z]').hasMatch(value)) return true;
     return false;
+  }
+
+  /// Checks a StringInterpolation for user-visible text parts.
+  void _checkInterpolation(
+    StringInterpolation node,
+    DiagnosticReporter reporter,
+  ) {
+    for (final element in node.elements) {
+      if (element is InterpolationString && _isUserVisible(element.value)) {
+        reporter.atNode(node, code);
+        return;
+      }
+    }
   }
 }

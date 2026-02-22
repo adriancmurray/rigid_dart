@@ -4,7 +4,7 @@ description: >
   state discipline, architecture boundaries, and modern Dart idioms
   as hard analyzer errors via custom_lint.
 version: 0.1.0
-publish_to: "none"
+repository: https://github.com/adriancmurray/rigid_dart
 
 environment:
   sdk: ^3.8.0

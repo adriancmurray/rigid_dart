@@ -66,6 +66,9 @@ class RequireTests extends DartLintRule {
     if (!File(testPath).existsSync()) {
       // Report at the library/compilation-unit level (first line).
       context.registry.addCompilationUnit((node) {
+        // Skip barrel/export-only files — they have no logic to test.
+        if (node.declarations.isEmpty) return;
+
         reporter.atNode(
           node,
           LintCode(

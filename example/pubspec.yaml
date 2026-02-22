@@ -1,0 +1,16 @@
+name: rigid_dart_example
+description: Example app showing rigid_dart in action.
+version: 0.0.1
+publish_to: "none"
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  custom_lint: ^0.8.1
+  rigid_dart:
+    path: ../
