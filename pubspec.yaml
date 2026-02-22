@@ -3,7 +3,7 @@ description: >
   Rust-grade guardrails for Dart/Flutter. Enforces layout safety,
   state discipline, architecture boundaries, and modern Dart idioms
   as hard analyzer errors via custom_lint.
-version: 0.1.1
+version: 0.1.2
 repository: https://github.com/adriancmurray/rigid_dart
 homepage: https://github.com/adriancmurray/rigid_dart
 issue_tracker: https://github.com/adriancmurray/rigid_dart/issues

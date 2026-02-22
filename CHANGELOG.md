@@ -1,3 +1,7 @@
+## 0.1.2
+
+* **Fix**: `rigid_no_unbounded_column` now recognizes `mainAxisSize: MainAxisSize.min` as a valid bounded pattern, eliminating false positives for `Column` inside `SingleChildScrollView`.
+
 ## 0.1.1
 
 * **Framework-agnostic**: All rule messages, docs, and examples no longer mandate Riverpod specifically. setState/ChangeNotifier bans apply regardless of chosen state management.
