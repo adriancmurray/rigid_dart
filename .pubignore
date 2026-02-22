@@ -1,0 +1,3 @@
+# Exclude large assets from pub.dev archive
+assets/
+AGENT.md
