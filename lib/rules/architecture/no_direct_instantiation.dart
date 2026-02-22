@@ -9,7 +9,7 @@ import '../../src/utils.dart';
 /// Flags direct instantiation of infrastructure classes inside widgets.
 ///
 /// Agents frequently write `final repo = UserRepository();` inside a
-/// `build` method instead of reading from a DI container or Riverpod
+/// `build` method instead of reading from a DI container or provider
 /// provider. This creates tight coupling and makes testing impossible.
 ///
 /// Catches class names ending in:

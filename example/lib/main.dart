@@ -21,7 +21,7 @@ class _CounterWidgetState extends State<CounterWidget> {
     return ElevatedButton(
       onPressed: () {
         // ❌ This will fire rigid_no_set_state.
-        // FIX: Use a Riverpod provider instead.
+        // FIX: Use a provider or DI container instead.
         setState(() => _count++);
       },
       child: Text('Count: $_count'),

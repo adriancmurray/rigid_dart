@@ -19,7 +19,7 @@ class NoChangeNotifier extends DartLintRule {
     name: 'rigid_no_change_notifier',
     problemMessage:
         'ChangeNotifier/ValueNotifier is banned. '
-        'Use Riverpod Notifier or AsyncNotifier for state management.',
+        'Use a proper state management solution (e.g. Notifier, Cubit, etc.).',
     errorSeverity: DiagnosticSeverity.ERROR,
   );
 

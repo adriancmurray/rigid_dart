@@ -161,7 +161,8 @@ class RigidConfig {
       case 'rigid_no_change_notifier':
       case 'rigid_exhaustive_async':
         final sm = preferences['state_management'];
-        return sm == 'riverpod';
+        // Any reactive state management enables these rules.
+        return sm == 'riverpod' || sm == 'bloc' || sm == 'provider';
 
       case 'rigid_no_hardcoded_colors':
       case 'rigid_no_hardcoded_text_style':

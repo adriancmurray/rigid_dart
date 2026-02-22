@@ -6,7 +6,7 @@ import '../../src/types.dart';
 import '../../src/utils.dart';
 import '../../src/config.dart';
 
-/// Bans `setState()` calls. Use Riverpod instead.
+/// Bans `setState()` calls. Use a proper state management solution instead.
 ///
 /// Type-resolved: checks that the receiver is actually `State<T>`,
 /// not just any method named `setState`.
@@ -16,7 +16,7 @@ class NoSetState extends DartLintRule {
   static const _code = LintCode(
     name: 'rigid_no_set_state',
     problemMessage:
-        'setState() is banned. Use Riverpod (ref.read/ref.watch) '
+        'setState() is banned. Use a state management solution '
         'for state management instead.',
     errorSeverity: DiagnosticSeverity.ERROR,
   );

@@ -62,13 +62,13 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 | `rigid_constrained_text_field` | 🔴 | `TextField` in `Row` without width constraint |
 
 ### Phase 2: State Discipline
-*Enforces Riverpod. Prevents memory leaks and async crashes.*
+*Bans anti-patterns. Prevents memory leaks and async crashes.*
 
 | Rule | Sev | What it catches |
 |------|-----|-----------------|
 | `rigid_no_set_state` | 🔴 | Any `setState()` call (type-resolved: checks receiver is `State<T>`) |
 | `rigid_no_change_notifier` | 🔴 | `ChangeNotifier` subclass/mixin (catches via `isAssignableFrom`) |
-| `rigid_exhaustive_async` | 🔴 | Direct `.value` on `AsyncValue` without `.when()` |
+| `rigid_exhaustive_async` | 🔴 | Direct `.value` on async types without exhaustive handling |
 | `rigid_no_build_context_across_async` | 🔴 | `BuildContext` used after `await` without `mounted` check |
 | `rigid_dispose_required` | 🔴 | Disposable controllers (AnimationController, FocusNode, etc.) not disposed |
 
@@ -115,9 +115,7 @@ The agent sees a build failure. It fixes the code. It retries. That's the loop.
 # pubspec.yaml
 dev_dependencies:
   custom_lint: ^0.8.1
-  rigid_dart:
-    git:
-      url: https://github.com/adriancmurray/rigid_dart.git
+  rigid_dart: ^0.1.0
 ```
 
 ```bash
@@ -141,7 +139,7 @@ analyzer:
 # Standard analysis (strict options from rigid_dart)
 dart analyze --fatal-infos
 
-# Custom rules (the 15 rigid_* rules)
+# Custom rules (the 23 rigid_* rules)
 dart run custom_lint
 ```
 

@@ -13,9 +13,7 @@ Add these to the project's `pubspec.yaml` under `dev_dependencies`:
 ```yaml
 dev_dependencies:
   custom_lint: ^0.8.1
-  rigid_dart:
-    git:
-      url: https://github.com/adriancmurray/rigid_dart.git
+  rigid_dart: ^0.1.0
 ```
 
 Then run:
@@ -53,14 +51,14 @@ analysis options take effect (e.g., `strict-casts`, `strict-inference`).
 **Ask the user these questions** and generate `rigid_dart.yaml` in the project root:
 
 1. **"What preset level?"** → `strict` | `balanced` | `safety`
-   - `strict`: All 16 rules as errors
+   - `strict`: All 23 rules as errors
    - `balanced` (default): Universal rules as errors. Opinionated rules
      enabled based on preferences below, as warnings.
    - `safety`: Only universal rules (crash/leak prevention). Opinionated off.
 
 2. **"What state management do you use?"** → `riverpod` | `bloc` | `provider` | `none`
-   - If `riverpod`: enables `no_set_state`, `no_change_notifier`, `exhaustive_async`
-   - Otherwise: those rules stay off
+   - If using a reactive solution (riverpod/bloc): enables `no_set_state`, `no_change_notifier`, `exhaustive_async`
+   - If `none`: those rules stay off
 
 3. **"Do you enforce a centralized theme system?"** → `true` | `false`
    - If `true`: enables `no_hardcoded_colors`, `no_hardcoded_text_style`
@@ -75,7 +73,7 @@ Generate the config file based on answers:
 preset: balanced
 
 preferences:
-  state_management: riverpod  # riverpod | bloc | provider | none
+  state_management: riverpod  # riverpod | bloc | provider | none (choose yours)
   theme_system: true
   require_tests: false
 
@@ -98,7 +96,7 @@ Run:
 dart run custom_lint
 ```
 
-This activates the 19 custom lint rules. Any violations will appear as
+This activates the 23 custom lint rules. Any violations will appear as
 errors or warnings with the `rigid_` prefix.
 
 **Checkpoint:** Output should show rule violations (if any exist) prefixed
@@ -115,8 +113,8 @@ When rigid_dart flags violations, fix them according to these patterns:
 | `rigid_no_expanded_outside_flex` | Move `Expanded`/`Flexible` to be a direct child of `Row`/`Column`/`Flex` |
 | `rigid_no_unbounded_column` | Wrap nested `Column`/`ListView` in `SizedBox` with height, or set `shrinkWrap: true` |
 | `rigid_constrained_text_field` | Wrap `TextField` in `Expanded` or `SizedBox` when inside a `Row` |
-| `rigid_no_set_state` | Replace `setState` with Riverpod `ref.read`/`ref.watch` |
-| `rigid_no_change_notifier` | Replace `ChangeNotifier` with Riverpod `Notifier` or `AsyncNotifier` |
+| `rigid_no_set_state` | Replace `setState` with a proper state management solution |
+| `rigid_no_change_notifier` | Replace `ChangeNotifier` with a reactive state solution (e.g. Notifier, Cubit) |
 | `rigid_exhaustive_async` | Replace `.value` with `.when(data:, loading:, error:)` |
 | `rigid_no_hardcoded_colors` | Replace `Colors.*` and `Color(0xFF...)` with `Theme.of(context).colorScheme.*` |
 | `rigid_no_hardcoded_text_style` | Replace raw `TextStyle(fontSize: N)` with `Theme.of(context).textTheme.*` |
@@ -319,7 +317,7 @@ PATH line from your shell config.
 1. **Never disable a rigid_dart rule globally.** Use `// ignore:` per-line only.
 2. **All colors must come from the theme.** No `Colors.red` or `Color(0xFF...)`.
 3. **All text styles must come from the theme.** No raw `fontSize` values.
-4. **No `setState`, no `ChangeNotifier`.** Use Riverpod.
+4. **No `setState`, no `ChangeNotifier`.** Use a proper state management solution.
 5. **No `dynamic`.** Type everything explicitly.
 6. **No deprecated APIs.** Use `PopScope`, `.withValues(alpha:)`.
 
