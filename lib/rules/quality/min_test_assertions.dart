@@ -44,7 +44,10 @@ class MinTestAssertions extends DartLintRule {
           if (name == 'test' || name == 'testWidgets' || name == 'group') {
             hasTestBlock = true;
           }
-          if (name == 'expect' || name == 'expectLater' || name == 'expectAsync0' || name == 'expectAsync1') {
+          if (name == 'expect' || name == 'expectLater' ||
+              name == 'expectAsync0' || name == 'expectAsync1' ||
+              name == 'verify' || name == 'verifyInOrder' ||
+              name == 'verifyNever') {
             hasExpect = true;
           }
         }

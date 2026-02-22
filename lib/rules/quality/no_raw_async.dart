@@ -97,7 +97,13 @@ class NoRawAsync extends DartLintRule {
         // Check if the awaited expression is a known safe method.
         final expr = node.expression;
         if (expr is MethodInvocation) {
-          if (!_safeAwaits.contains(expr.methodName.name)) {
+          final methodName = expr.methodName.name;
+          // catchError/onError chains handle errors inline.
+          if (methodName == 'catchError' || methodName == 'onError') {
+            // Error is handled via chaining — not unguarded.
+          } else if (_safeAwaits.contains(methodName)) {
+            // Known safe method — skip.
+          } else {
             hasUnsafeAwait = true;
           }
         } else if (expr is FunctionExpressionInvocation) {
